@@ -286,7 +286,6 @@ def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = Fa
     im - image
     detections - predicted bounding boxes you wanna draw (red) (x1,y1,x2,y2) - exact pixels on image 
     labels - GT bboxes u wanna draw (green) (x1,y1,x2,y2) - exact pixels on image
-    
     only works for one class
     """
     transform = torchvision.transforms.ToPILImage()
@@ -303,6 +302,8 @@ def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = Fa
         torch.tensor([line[2], line[3]]),
         color=torch.tensor([255,255,2], dtype=torch.uint8))
     a=random.randint(1, 200)
+    if write_to_disk:
+        torchvision.io.write_png(im_drawn, f"slike/test_torchv{a}.png")
     im_drawn = transform(im_drawn)
     ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_dataset(LoGT)}", fill=(222, 222, 222))
     if write_to_disk:
@@ -682,5 +683,6 @@ def main(opt):
             plot_val_study(x=x)  # plot
 
 if __name__ =="__main__":
-    opt = parse_opt(["--data", "data/police1.yaml", "--weights", "weights/yolov5s_500_sgd_r10k.pt", "--imgsz", "1024", "--task", "val"])
+    #opt = parse_opt(["--data", "data/police1.yaml", "--weights", "weights/yolov5s_500_sgd_r10k.pt", "--imgsz", "1024", "--task", "val"])
+    opt = parse_opt()
     main(opt)
