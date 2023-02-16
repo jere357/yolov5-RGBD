@@ -117,6 +117,7 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
 
     # Scale ratio (new / old)
     r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])
+    im_old = im[:,:,0:3]
     if not scaleup:  # only scale down, do not scale up (for better val mAP)
         r = min(r, 1.0)
 
@@ -137,13 +138,16 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
     if shape[::-1] != new_unpad:  # resize
         #im = cv2.resize(im, new_unpad, interpolation=cv2.INTER_LINEAR)
         im = skimage.transform.resize(im, new_unpad)
+        im_rgb = im[:,:,0:3]
     top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
     left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
     #TODO: zamjeni kodom koji to radi po kanalima i onda ih staka na kraju
-    img_padded = np.zeros((im.shape[0]+top+bottom, im.shape[1]+left+right, im.shape[2]), dtype=np.uint8)
+    img_padded = np.zeros((im.shape[0]+top+bottom, im.shape[1]+left+right, im.shape[2]), dtype=np.float32)
+    
     for channel in range(im.shape[2]):
         img_padded[:, :, channel] = np.pad(im[:, :, channel], ((top, bottom), (left, right)), 'constant', constant_values=[[0, 0], [0, 0]])
     #im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
+    im_padded_rgb = img_padded[:,:,0:3]
     return img_padded, ratio, (dw, dh)
 
 

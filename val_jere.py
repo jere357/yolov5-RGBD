@@ -348,7 +348,7 @@ def LoGT_loss(detections, labels, im, visualize = False):
             pass
             #TODO:implementiraj gubitak iou ako je line_y izvan GT bboxa
     if visualize:
-        im_drawn = visualise_detections_labels(best_box_per_label, labels, im, LoGT, write_to_disk = True)
+        im_drawn = visualise_detections_labels(best_box_per_label, labels, im[0:3,:,:], LoGT, write_to_disk = True)
     #kornia.utils.
     return LoGT
         
@@ -553,7 +553,7 @@ def run(
                 #scale_boxes(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct = process_batch(predn, labelsn, iouv, im[si]*255)
-                logt = LoGT_loss(predn.clone(), labelsn.clone(), im[si]*255)
+                logt = LoGT_loss(predn.clone(), labelsn.clone(), im[si]*255, visualize=True)
                 #logt.to(device)
                 altim = im
                 if plots:
