@@ -468,7 +468,8 @@ def run(
             ncm = model.model.nc
             assert ncm == nc, f'{weights} ({ncm} classes) trained on different --data than what you passed ({nc} ' \
                               f'classes). Pass correct combination of --weights and --data that are trained together.'
-        model.warmup(imgsz=(1 if pt else batch_size, 3, imgsz, imgsz))  # warmup
+        #TODO: bolja definicija broja kanala 
+        model.warmup(imgsz=(1 if pt else batch_size, 5, imgsz, imgsz))  # warmup
         pad, rect = (0.0, False) if task == 'speed' else (0.5, pt)  # square inference for benchmarks
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
         dataloader = create_dataloader(data[task],
@@ -556,7 +557,8 @@ def run(
                 #scale_boxes(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct = process_batch(predn, labelsn, iouv, im[si]*255)
-                logt = LoGT_loss(predn.clone(), labelsn.clone(), im[si]*255, visualize=True)
+                #TODO: pazi mozda ti fali *255
+                logt = LoGT_loss(predn.clone(), labelsn.clone(), im[si], visualize=True)
                 #logt.to(device)
                 altim = im
                 if plots:
