@@ -351,7 +351,11 @@ def LoGT_loss(detections, labels, im, visualize = False):
             pass
             #TODO:implementiraj gubitak iou ako je line_y izvan GT bboxa
     if visualize:
-        im_drawn = visualise_detections_labels(best_box_per_label, labels, im[0:3,:,:], LoGT, write_to_disk = True)
+        image = im[0,:,:]
+        image1 = im[1,:,:]
+        image2 = im[2:5,:,:]
+
+        im_drawn = visualise_detections_labels(best_box_per_label, labels, im[2:5,:,:], LoGT, write_to_disk = True)
     #kornia.utils.
     return LoGT
         
