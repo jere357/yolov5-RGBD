@@ -288,6 +288,8 @@ def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = Fa
     labels - GT bboxes u wanna draw (green) (x1,y1,x2,y2) - exact pixels on image
     only works for one class
     """
+    a=1
+    #TODO: ODI NEGDI SE PRETVORI U SAMO CRINLO MRAJO NEMAN POJMA KAKO STA
     transform = torchvision.transforms.ToPILImage()
     im = im.to(torch.uint8)
     lbls = labels.to(torch.int32)
@@ -683,6 +685,6 @@ def main(opt):
             plot_val_study(x=x)  # plot
 
 if __name__ =="__main__":
-    #opt = parse_opt(["--data", "data/police1.yaml", "--weights", "weights/yolov5s_500_sgd_r10k.pt", "--imgsz", "1024", "--task", "val"])
-    opt = parse_opt()
+    opt = parse_opt(["--data", "data/retail10k_5dim_debug.yaml", "--weights", "weights/20_epoha_test.pt", "--imgsz", "1024", "--task", "val"])
+    #opt = parse_opt()
     main(opt)
