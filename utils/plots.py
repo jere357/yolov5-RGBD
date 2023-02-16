@@ -242,12 +242,15 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None):
         images *= 255  # de-normalise (optional)
 
     # Build Image
+    #TODO: ostvari mosaic da radi za 5dim
     mosaic = np.full((int(ns * h), int(ns * w), 3), 255, dtype=np.uint8)  # init
     for i, im in enumerate(images):
+        #TODO: popravi temp fix 
+        im = im.transpose(1, 2, 0)
+        im = im[:,:,0:3]
         if i == max_subplots:  # if last batch has fewer images than we expect
             break
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
-        im = im.transpose(1, 2, 0)
         mosaic[y:y + h, x:x + w, :] = im
 
     # Resize (optional)

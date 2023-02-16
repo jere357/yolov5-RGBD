@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import yaml
 from tqdm import tqdm
-
+import matplotlib.pyplot as plt
 from utils import TryExcept
 from utils.general import LOGGER, TQDM_BAR_FORMAT, colorstr
 
@@ -28,12 +28,7 @@ def check_anchor_order(m):
 
 @TryExcept(f'{PREFIX}ERROR')
 def check_anchors(dataset, model, thr=4.0, imgsz=640):
-    # Check anchor fit to data, recompute if necessary
-    m = model.module.model[-1] if hasattr(model, 'module') else model.model[-1]  # Detect()
-    shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
-    scale = np.random.uniform(0.9, 1.1, size=(shapes.shape[0], 1))  # augment scale
-    wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(shapes * scale, dataset.labels)])).float()  # wh
-
+    
     def metric(k):  # compute metric
         r = wh[:, None] / k[None]
         x = torch.min(r, 1 / r).min(2)[0]  # ratio metric
@@ -41,9 +36,30 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
         aat = (x > 1 / thr).float().sum(1).mean()  # anchors above threshold
         bpr = (best > 1 / thr).float().mean()  # best possible recall
         return bpr, aat
-
+    """
+    def print_results2(k, verbose=True):
+            k = k[np.argsort(k.prod(1))]  # sort small to large
+            x, best = metric(k)
+            bpr, aat = (best > thr).float().mean(), (x > thr).float().mean() * n  # best possible recall, anch > thr
+            s = f'{PREFIX}thr={thr:.2f}: {bpr:.4f} best possible recall, {aat:.2f} anchors past thr\n' \
+                f'{PREFIX}n={n}, img_size={img_size}, metric_all={x.mean():.3f}/{best.mean():.3f}-mean/best, ' \
+                f'past_thr={x[x > thr].mean():.3f}-mean: '
+            for x in k:
+                s += '%i,%i, ' % (round(x[0]), round(x[1]))
+            if verbose:
+                LOGGER.info(s[:-2])
+            return k
+    """
+    # Check anchor fit to data, recompute if necessary
+    m = model.module.model[-1] if hasattr(model, 'module') else model.model[-1]  # Detect()
+    shapes = imgsz * dataset.shapes / dataset.shapes.max(1, keepdims=True)
+    #wh0 = np.concatenate([l[:, 3:5] * s for s, l in zip(shapes, dataset.labels)])  # wh
+    scale = np.random.uniform(0.9, 1.1, size=(shapes.shape[0], 1))  # augment scale
+    wh = torch.tensor(np.concatenate([l[:, 3:5] * s for s, l in zip(shapes * scale, dataset.labels)])).float()  # wh
+    
     stride = m.stride.to(m.anchors.device).view(-1, 1, 1)  # model strides
     anchors = m.anchors.clone() * stride  # current anchors
+    #LOGGER.info(print_results2(torch.Tensor.cpu(anchors)))
     bpr, aat = metric(anchors.cpu().view(-1, 2))
     s = f'\n{PREFIX}{aat:.2f} anchors/target, {bpr:.3f} Best Possible Recall (BPR). '
     if bpr > 0.98:  # threshold to recompute
@@ -51,7 +67,10 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
     else:
         LOGGER.info(f'{s}Anchors are a poor fit to dataset ⚠️, attempting to improve...')
         na = m.anchors.numel() // 2  # number of anchors
+        #na = 20
+        #LOGGER.info("rezultati prije kmeana: " + print_results2(torch.Tensor.cpu(anchors)))
         anchors = kmean_anchors(dataset, n=na, img_size=imgsz, thr=thr, gen=1000, verbose=False)
+        #LOGGER.info("rezultati nakon kmeana: " + print_results2(torch.Tensor.cpu(anchors)))
         new_bpr = metric(anchors)[0]
         if new_bpr > bpr:  # replace anchors
             anchors = torch.tensor(anchors, device=m.anchors.device).type_as(m.anchors)
@@ -137,20 +156,21 @@ def kmean_anchors(dataset='./data/coco128.yaml', n=9, img_size=640, thr=4.0, gen
         LOGGER.warning(f'{PREFIX}WARNING ⚠️ switching strategies from kmeans to random init')
         k = np.sort(npr.rand(n * 2)).reshape(n, 2) * img_size  # random init
     wh, wh0 = (torch.tensor(x, dtype=torch.float32) for x in (wh, wh0))
-    k = print_results(k, verbose=False)
-
-    # Plot
-    # k, d = [None] * 20, [None] * 20
-    # for i in tqdm(range(1, 21)):
-    #     k[i-1], d[i-1] = kmeans(wh / s, i)  # points, mean distance
-    # fig, ax = plt.subplots(1, 2, figsize=(14, 7), tight_layout=True)
-    # ax = ax.ravel()
-    # ax[0].plot(np.arange(1, 21), np.array(d) ** 2, marker='.')
-    # fig, ax = plt.subplots(1, 2, figsize=(14, 7))  # plot wh
-    # ax[0].hist(wh[wh[:, 0]<100, 0],400)
-    # ax[1].hist(wh[wh[:, 1]<100, 1],400)
-    # fig.savefig('wh.png', dpi=200)
-
+    k = print_results(k, verbose=True)
+    #Plot
+    """
+    k, d = [None] * 20, [None] * 20
+    for i in tqdm(range(1, 21)):
+        k[i-1], d[i-1] = kmeans(wh / s, i)  # points, mean distance
+    ig, ax = plt.subplots(1, 2, figsize=(14, 7), tight_layout=True)
+    ax = ax.ravel()
+    #ax[0].plot(np.arange(1, 21), np.array(d) ** 2, marker='.')
+    fig, ax = plt.subplots(1, 2, figsize=(14, 7))  # plot wh
+    ax[0].hist(wh[wh[:, 0]<100, 0],400)
+    ax[1].hist(wh[wh[:, 1]<100, 1],400)
+    fig.savefig('wh.png', dpi=200)
+    plt.show()
+    """
     # Evolve
     f, sh, mp, s = anchor_fitness(k), k.shape, 0.9, 0.1  # fitness, generations, mutation prob, sigma
     pbar = tqdm(range(gen), bar_format=TQDM_BAR_FORMAT)  # progress bar
