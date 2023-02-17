@@ -69,7 +69,7 @@ def check_anchors(dataset, model, thr=4.0, imgsz=640):
         na = m.anchors.numel() // 2  # number of anchors
         #na = 20
         #LOGGER.info("rezultati prije kmeana: " + print_results2(torch.Tensor.cpu(anchors)))
-        anchors = kmean_anchors(dataset, n=na, img_size=imgsz, thr=thr, gen=1000, verbose=False)
+        anchors = kmean_anchors(dataset, n=na, img_size=imgsz, thr=thr, gen=200, verbose=False)
         #LOGGER.info("rezultati nakon kmeana: " + print_results2(torch.Tensor.cpu(anchors)))
         new_bpr = metric(anchors)[0]
         if new_bpr > bpr:  # replace anchors

@@ -291,6 +291,7 @@ def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = Fa
     a=1
     #TODO: ODI NEGDI SE PRETVORI U SAMO CRINLO MRAJO NEMAN POJMA KAKO STA
     transform = torchvision.transforms.ToPILImage()
+    im=im*255*255 #i have no clue why i gotta multiply by 255*255, but it works
     im = im.to(torch.uint8)
     lbls = labels.to(torch.int32)
     dets = detections.to(torch.int32)
@@ -304,8 +305,8 @@ def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = Fa
         torch.tensor([line[2], line[3]]),
         color=torch.tensor([255,255,2], dtype=torch.uint8))
     a=random.randint(1, 50)
-    if write_to_disk:
-        torchvision.io.write_png(im_drawn, f"slike/test{a}_torch.png")
+    #if write_to_disk:
+        #torchvision.io.write_png(im_drawn, f"slike/test{a}_torch.png")
     im_drawn = transform(im_drawn)
     ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_dataset(LoGT)}", fill=(222, 222, 222))
     if write_to_disk:
