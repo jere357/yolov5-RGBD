@@ -295,25 +295,28 @@ def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = Fa
     im = im.to(torch.uint8)
     lbls = labels.to(torch.int32)
     dets = detections.to(torch.int32)
-    im_drawn = torchvision.utils.draw_bounding_boxes(im, boxes=lbls, labels=[f"{number}" for number in range(len(lbls))], width=6, colors='green', fill=True, font_size=88)
-    im_drawn = torchvision.utils.draw_bounding_boxes(im_drawn, boxes=dets, labels=[f"   {number}" for number in range(len(dets))], width=2, colors='red', fill=False, font_size=88)
-    lines = bboxes_to_lines(dets)
-    for line in lines:
-        #im_drawn[:, y1, x1 : x2+1] = 
-        im_drawn = draw_line(im_drawn,
-        torch.tensor([line[0],line[1]]),
-        torch.tensor([line[2], line[3]]),
-        color=torch.tensor([255,255,2], dtype=torch.uint8))
-    a=random.randint(1, 50)
-    #if write_to_disk:
-        #torchvision.io.write_png(im_drawn, f"slike/test{a}_torch.png")
-    im_drawn = transform(im_drawn)
-    ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_dataset(LoGT)}", fill=(222, 222, 222))
-    if write_to_disk:
-        im_drawn.save(f"slike/test{a}.png")
-        #torchvision.io.write_png(im_drawn, f"slike/test{a}.png")
-        torchvision.io.write_png(im.cpu(), f"slike/test{a}_clean .png")
-    #kornia.save_image(im_drawn, "test.png")
+    try:
+        im_drawn = torchvision.utils.draw_bounding_boxes(im, boxes=lbls, labels=[f"{number}" for number in range(len(lbls))], width=6, colors='green', fill=True, font_size=88)
+        im_drawn = torchvision.utils.draw_bounding_boxes(im_drawn, boxes=dets, labels=[f"   {number}" for number in range(len(dets))], width=2, colors='red', fill=False, font_size=88)
+        lines = bboxes_to_lines(dets)
+        for line in lines:
+            #im_drawn[:, y1, x1 : x2+1] = 
+            im_drawn = draw_line(im_drawn,
+            torch.tensor([line[0],line[1]]),
+            torch.tensor([line[2], line[3]]),
+            color=torch.tensor([255,255,2], dtype=torch.uint8))
+        a=random.randint(1, 50)
+        #if write_to_disk:
+            #torchvision.io.write_png(im_drawn, f"slike/test{a}_torch.png")
+        im_drawn = transform(im_drawn)
+        ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_dataset(LoGT)}", fill=(222, 222, 222))
+        if write_to_disk:
+            im_drawn.save(f"slike/test{a}.png")
+            #torchvision.io.write_png(im_drawn, f"slike/test{a}.png")
+            torchvision.io.write_png(im.cpu(), f"slike/test{a}_clean .png")
+        #kornia.save_image(im_drawn, "test.png")
+    except:
+        LOGGER.info("sta ja znan sjebalo se crtanje na slici puca mi kurac iskr")
     return im_drawn
 
     
