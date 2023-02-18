@@ -1,0 +1,44 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "RGDB slike train ",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--data", "data/retail10k_5dim_debug.yaml", "--img", "1024","--cfg", "models/yolov5n.yaml", "--batch", "16", "--cache", "ram",
+            "--optimizer", "SGD", "--epochs", "100","--name", "retail10k_5dim_test:yolov5n", "--hyp", "data/hyps/hyp_retail10k_5dim.yaml"]
+
+        },
+
+        {
+            "name": "RGDB slike valid ka train + weights",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--data", "data/retail10k_5dim_debug.yaml", "--img", "1024","--cfg", "models/yolov5n.yaml", "--batch", "16",
+            "--optimizer", "SGD", "--epochs", "3","--name", "police_5dim_1024_8testidkbrate","--weights",
+            "weights/20_epoha_test.pt", "--hyp", "data/hyps/hyp_retail10k_5dim.yaml"]
+
+        },
+
+        {
+            "name": "RGDB slike valid",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--data", "data/retail10k_5dim_debug.yaml", "--img", "1024","--weights", "weights/20_epoha_test.pt", "--batch", "16",
+            "--name", "police_5dim_1024_8testidkbrate_valrun"]
+
+        }
+    ]
+}
