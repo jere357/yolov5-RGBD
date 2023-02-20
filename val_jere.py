@@ -281,7 +281,7 @@ def draw_line(image: torch.Tensor, p1: torch.Tensor, p2: torch.Tensor, color: to
     return image
 
 
-def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = False):
+def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = False, image_name_jebateisus="hehexd"):
     """
     im - image
     detections - predicted bounding boxes you wanna draw (red) (x1,y1,x2,y2) - exact pixels on image 
@@ -311,9 +311,9 @@ def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = Fa
         im_drawn = transform(im_drawn)
         ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_dataset(LoGT)}", fill=(222, 222, 222))
         if write_to_disk:
-            im_drawn.save(f"slike/test{a}.png")
+            im_drawn.save(f"slike/test{image_name_jebateisus}{a}.png")
             #torchvision.io.write_png(im_drawn, f"slike/test{a}.png")
-            torchvision.io.write_png(im.cpu(), f"slike/test{a}_clean .png")
+            torchvision.io.write_png(im.cpu(), f"slike/test{image_name_jebateisus}{a}_clean .png")
         #kornia.save_image(im_drawn, "test.png")
     except:
         LOGGER.info("sta ja znan sjebalo se crtanje na slici puca mi kurac iskr")
@@ -358,8 +358,11 @@ def LoGT_loss(detections, labels, im, visualize = False):
         image = im[0,:,:]
         image1 = im[1,:,:]
         image2 = im[2:5,:,:]
-
-        im_drawn = visualise_detections_labels(best_box_per_label, labels, im[2:5,:,:], LoGT, write_to_disk = True)
+        #im_drawn = visualise_detections_labels(best_box_per_label, labels, im[2:5,:,:], LoGT, write_to_disk = True)
+        im_drawn = visualise_detections_labels(best_box_per_label, labels, image, LoGT, image_name_jebateisus = "NULA", write_to_disk = True)
+        im_drawn = visualise_detections_labels(best_box_per_label, labels, image1, LoGT, image_name_jebateisus = "JEDAN", write_to_disk = True)
+        im_drawn = visualise_detections_labels(best_box_per_label, labels, image2, LoGT, image_name_jebateisus = "DVA", write_to_disk = True)
+        
     #kornia.utils.
     return LoGT
         
