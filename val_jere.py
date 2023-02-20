@@ -311,13 +311,35 @@ def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = Fa
         im_drawn = transform(im_drawn)
         ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_dataset(LoGT)}", fill=(222, 222, 222))
         if write_to_disk:
-            im_drawn.save(f"slike/test{image_name_jebateisus}{a}.png")
+            im_drawn.save(f"slike/test{a}{image_name_jebateisus}.png")
             #torchvision.io.write_png(im_drawn, f"slike/test{a}.png")
-            torchvision.io.write_png(im.cpu(), f"slike/test{image_name_jebateisus}{a}_clean .png")
+            #torchvision.io.write_png(im.cpu(), f"slike/test{a}{image_name_jebateisus}_clean .png")
         #kornia.save_image(im_drawn, "test.png")
-    except:
-        LOGGER.info("sta ja znan sjebalo se crtanje na slici puca mi kurac iskr")
+    except (ValueError, RuntimeError) as e:
+        LOGGER.info(f"for image shape {im.shape} img_name{image_name_jebateisus}sjebalo se crtanje: {e} ")
+        im_drawn = None #neuspjeh na gitarama
+    """
+    im_drawn = torchvision.utils.draw_bounding_boxes(im, boxes=lbls, labels=[f"{number}" for number in range(len(lbls))], width=6, colors='green', fill=True, font_size=88)
+    im_drawn = torchvision.utils.draw_bounding_boxes(im_drawn, boxes=dets, labels=[f"   {number}" for number in range(len(dets))], width=2, colors='red', fill=False, font_size=88)
+    lines = bboxes_to_lines(dets)
+    for line in lines:
+        #im_drawn[:, y1, x1 : x2+1] = 
+        im_drawn = draw_line(im_drawn,
+        torch.tensor([line[0],line[1]]),
+        torch.tensor([line[2], line[3]]),
+        color=torch.tensor([255,255,2], dtype=torch.uint8))
+    a=random.randint(1, 50)
+    #if write_to_disk:
+        #torchvision.io.write_png(im_drawn, f"slike/test{a}_torch.png")
+    im_drawn = transform(im_drawn)
+    ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_dataset(LoGT)}", fill=(222, 222, 222))
+    if write_to_disk:
+        im_drawn.save(f"slike/test{image_name_jebateisus}{a}.png")
+        #torchvision.io.write_png(im_drawn, f"slike/test{a}.png")
+        torchvision.io.write_png(im.cpu(), f"slike/test{image_name_jebateisus}{a}_clean .png")
+    #kornia.save_image(im_drawn, "test.png")
     return im_drawn
+    """
 
     
 def LoGT_loss(detections, labels, im, visualize = False):
@@ -355,13 +377,13 @@ def LoGT_loss(detections, labels, im, visualize = False):
             pass
             #TODO:implementiraj gubitak iou ako je line_y izvan GT bboxa
     if visualize:
-        image = im[0,:,:]
-        image1 = im[1,:,:]
+        image = im[0:3,:,:]
+        image1 = im[1:4,:,:]
         image2 = im[2:5,:,:]
         #im_drawn = visualise_detections_labels(best_box_per_label, labels, im[2:5,:,:], LoGT, write_to_disk = True)
-        im_drawn = visualise_detections_labels(best_box_per_label, labels, image, LoGT, image_name_jebateisus = "NULA", write_to_disk = True)
-        im_drawn = visualise_detections_labels(best_box_per_label, labels, image1, LoGT, image_name_jebateisus = "JEDAN", write_to_disk = True)
-        im_drawn = visualise_detections_labels(best_box_per_label, labels, image2, LoGT, image_name_jebateisus = "DVA", write_to_disk = True)
+        visualise_detections_labels(best_box_per_label, labels, image, LoGT, image_name_jebateisus = "NULA", write_to_disk = True)
+        visualise_detections_labels(best_box_per_label, labels, image1, LoGT, image_name_jebateisus = "JEDAN", write_to_disk = True)
+        visualise_detections_labels(best_box_per_label, labels, image2, LoGT, image_name_jebateisus = "DVA", write_to_disk = True)
         
     #kornia.utils.
     return LoGT
