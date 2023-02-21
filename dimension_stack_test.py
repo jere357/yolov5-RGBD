@@ -9,6 +9,14 @@ from PIL import Image
 
 
 data_folder = os.path.join("..", "..",  "data", "yolo_police10k")
+images_foldername = "images"
+images_path = os.path.join(data_folder, images_foldername)
+images = os.listdir(images_path)
+images.sort()
+for image in images:
+    pass
+"""
+data_folder = os.path.join("..", "..",  "data", "yolo_police10k")
 a = os.listdir(data_folder)
 edges_foldername = "edges"
 images_foldername = "images_stari"
@@ -20,10 +28,9 @@ depth_to_grayscale = False
 edges_path = os.path.join(data_folder, edges_foldername)
 images_path = os.path.join(data_folder, images_foldername)
 depths_path = os.path.join(data_folder, depths_foldername)
-edges = os.listdir(edges_path)
+#edges = os.listdir(edges_path)
 images = os.listdir(images_path)
 depths = os.listdir(depths_path)
-edges.sort()
 depths.sort()
 images.sort()
 
@@ -37,8 +44,8 @@ def write_img_to_disk(imgID):
     if depth_to_grayscale:
         depth_image = cv2.cvtColor(depth_image, cv2.COLOR_BGR2GRAY)
         depth_image = np.expand_dims(depth_image_gray, axis=2)
-    edge_image_gray = cv2.cvtColor(edge_image, cv2.COLOR_BGR2GRAY)
-    edge_image_gray = np.expand_dims(edge_image_gray, axis=2)
+    #edge_image_gray = cv2.cvtColor(edge_image, cv2.COLOR_BGR2GRAY)
+    #edge_image_gray = np.expand_dims(edge_image_gray, axis=2)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB) #convert to RGB
     stacked = np.concatenate((image, edge_image_gray, depth_image), axis=2)
     np.save(os.path.join(data_folder, numpy_foldername, f"{imgID[:-4]}_7dimRGBCD.npy"), stacked)
@@ -46,8 +53,6 @@ def write_img_to_disk(imgID):
 
 
 #def jere_pad(img )
-
-
 a = np.load(os.path.join(data_folder, numpy_foldername, "002ccf65cf100cc58438664b005482e5_5dimRGBCD.npy"))
 a1 = np.copy(a)
 a2 = np.copy(a)
@@ -78,8 +83,7 @@ x_depth = a[:,:,4:5]
 #b = cv2.cvtColor(b, cv2.COLOR_BGR2RGB)
 c = Image.fromarray(b)
 print(a.shape)
-
-exit()
+#TODO:sanity check na zapis i distribuciju ovi piksela u svakon kanalu neman pojma bokteeba
 t1 = time.time()
 with ThreadPool(20) as pool:
     pool.map(write_img_to_disk, images, chunksize=10)
@@ -87,9 +91,6 @@ t2=time.time()
 print(f"gotov sa zapisom u {round(t2-t1,2)} sekundi")
 
 
-"""
-this loop stacks every image from every folder on top of itself
-"""
 for imageID in tqdm(images):
     #load all images independently
     edge_image = cv2.imread(os.path.join(edges_path, imageID))
@@ -109,3 +110,4 @@ for imageID in tqdm(images):
     map(write_img_to_disk, [stacked], [os.path.join(data_folder, numpy_foldername, f"{imageID[:-4]}_5dimensionalRGBCD.npy")])
     #np.save(os.path.join(data_folder, numpy_foldername, f"{imageID[:-4]}_7dimensionalRGBCD.npy"), stacked)
     pass
+"""

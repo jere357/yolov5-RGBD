@@ -147,9 +147,9 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
     for channel in range(im.shape[2]):
         img_padded[:, :, channel] = np.pad(im[:, :, channel], ((top, bottom), (left, right)), 'constant', constant_values=[[0, 0], [0, 0]])
     #im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
-    im_padded_rgb = img_padded[:,:,0:3]
-    im_padded_depth = img_padded[:,:,4]
-    im_padded_canny = img_padded[:,:,3]
+    #im_padded_rgb = img_padded[:,:,0:3]
+    #im_padded_depth = img_padded[:,:,4]
+    #im_padded_canny = img_padded[:,:,3]
     return img_padded, ratio, (dw, dh)
 
 

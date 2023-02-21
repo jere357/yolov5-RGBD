@@ -27,7 +27,7 @@ from utils.general import (LOGGER, TQDM_BAR_FORMAT, Profile, check_dataset, chec
                            check_yaml, coco80_to_coco91_class, colorstr, increment_path, non_max_suppression,
                            print_args, scale_boxes, xywh2xyxy, xyxy2xywh)
 from utils.metrics import ConfusionMatrix, ap_per_class
-from utils.plots import output_to_target, plot_images, plot_val_study
+from utils.plots_jere import output_to_target, plot_images, plot_val_study
 from utils.torch_utils import select_device, smart_inference_mode
 
 def parse_opt(arguments):
@@ -161,12 +161,12 @@ def draw_line(image: torch.Tensor, p1: torch.Tensor, p2: torch.Tensor, color: to
 
     Examples:
         >>> image = torch.zeros(1, 8, 8)
-        >>> draw_line(image, torch.tensor([6, 4]), torch.tensor([1, 4]), torch.tensor([255]))
+        >>> draw_line(image, torch.tensor([6, 4]), torch.tensor([1, 4]), torch.tensor([254]))
         tensor([[[  0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.],
                  [  0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.],
                  [  0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.],
                  [  0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.],
-                 [  0., 255., 255., 255., 255., 255., 255.,   0.],
+                 [  0., 254., 254., 254., 254., 254., 254.,   0.],
                  [  0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.],
                  [  0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.],
                  [  0.,   0.,   0.,   0.,   0.,   0.,   0.,   0.]]])
@@ -291,7 +291,7 @@ def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = Fa
     a=1
     #TODO: ODI NEGDI SE PRETVORI U SAMO CRINLO MRAJO NEMAN POJMA KAKO STA
     transform = torchvision.transforms.ToPILImage()
-    im=im*255*255 #i have no clue why i gotta multiply by 255*255, but it works
+    im=im*255*255 #i have no clue why i gotta multiply by but it works
     im = im.to(torch.uint8)
     lbls = labels.to(torch.int32)
     dets = detections.to(torch.int32)
@@ -396,7 +396,7 @@ def calculate_logt_on_dataset(logt_on_dataset):
 
 
 
-def process_batch(detections, labels, iouv, im):
+def process_batch(detections, labels, iouv):
     """
     Return correct prediction matrix
     Arguments:
@@ -539,6 +539,7 @@ def run(
                 im = im.to(device, non_blocking=True)
                 targets = targets.to(device)
             im = im.half() if half else im.float()  # uint8 to fp16/32
+            #TODO: prva sus normalizacija ?!?!?, di je druga hmmmm
             im /= 255  # 0 - 255 to 0.0 - 1.0
             nb, _, height, width = im.shape  # batch size, channels, height, width
 
@@ -589,7 +590,7 @@ def run(
                 tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
                 #scale_boxes(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
-                correct = process_batch(predn, labelsn, iouv, im[si]*255)
+                correct = process_batch(predn, labelsn, iouv)
                 #TODO: pazi mozda ti fali *255
                 logt = LoGT_loss(predn.clone(), labelsn.clone(), im[si], visualize=True)
                 #logt.to(device)
@@ -608,6 +609,7 @@ def run(
 
         # Plot images
         if plots and batch_i < 100:
+            scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
             plot_images(im, targets, paths, save_dir / f'val_batch{batch_i}_labels.jpg', names)  # labels
             plot_images(im, output_to_target(preds), paths, save_dir / f'val_batch{batch_i}_pred.jpg', names)  # pred
 

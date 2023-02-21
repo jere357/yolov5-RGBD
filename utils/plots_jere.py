@@ -229,9 +229,6 @@ def output_to_target(output, max_det=300):
 def plot_images(images, targets, paths=None, fname='images.jpg', names=None):
     # Plot image grid with labels
     #TODO: dodaj kod di se gleda ako images ima vise kanala da onda radi kako BOG ZAPOVIDA!
-    if images.shape[1] != 3:
-        #TODO: multi channel code, only work for 5 channels rn huehue
-        images = images[:, 2:5, :, :]
     if isinstance(images, torch.Tensor):
         images = images.cpu().float().numpy()
     if isinstance(targets, torch.Tensor):
@@ -243,7 +240,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None):
     bs = min(bs, max_subplots)  # limit plot images
     ns = np.ceil(bs ** 0.5)  # number of subplots (square)
     if np.max(images[0]) <= 1:
-        images *= 255*255  # de-normalise (optional)
+        images *= 255  # de-normalise (optional)
 
     # Build Image
     #TODO: ostvari mosaic da radi za 5dim
