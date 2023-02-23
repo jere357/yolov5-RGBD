@@ -379,11 +379,11 @@ def LoGT_loss(detections, labels, im, visualize = False):
     if visualize:
         image = im[0:3,:,:]
         image1 = im[1:4,:,:]
-        image2 = im[2:5,:,:]
+        #image2 = im[2:5,:,:]
         #im_drawn = visualise_detections_labels(best_box_per_label, labels, im[2:5,:,:], LoGT, write_to_disk = True)
         visualise_detections_labels(best_box_per_label, labels, image, LoGT, image_name_jebateisus = "NULA", write_to_disk = True)
         visualise_detections_labels(best_box_per_label, labels, image1, LoGT, image_name_jebateisus = "JEDAN", write_to_disk = True)
-        visualise_detections_labels(best_box_per_label, labels, image2, LoGT, image_name_jebateisus = "DVA", write_to_disk = True)
+        #visualise_detections_labels(best_box_per_label, labels, image2, LoGT, image_name_jebateisus = "DVA", write_to_disk = True)
         
     #kornia.utils.
     return LoGT

@@ -11,8 +11,8 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--data", "data/retail10k_5dim_debug.yaml", "--img", "1024","--cfg", "models/yolov5n.yaml", "--batch", "16", "--cache", "ram",
-            "--optimizer", "SGD", "--epochs", "100","--name", "retail10k_5dim_test:yolov5n", "--hyp", "data/hyps/hyp_retail10k_5dim.yaml"]
+            "args": ["--data", "data/retail10k_5dim.yaml", "--imgsz", "1024","--cfg", "models/yolov5n.yaml", "--batch", "16", "--cache", "ram",
+            "--optimizer", "SGD", "--epochs", "50","--name", "retail10k_5dim_test", "--hyp", "data/hyps/hyp_retail10k_RGBD.yaml"]
 
         },
 
@@ -23,9 +23,9 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--data", "data/retail10k_5dim_debug.yaml", "--img", "1024","--cfg", "models/yolov5n.yaml", "--batch", "16",
+            "args": ["--data", "data/retail10k_5dim_debug.yaml", "--imgsz", "1024","--cfg", "models/yolov5n.yaml", "--batch", "16",
             "--optimizer", "SGD", "--epochs", "3","--name", "police_5dim_1024_8testidkbrate","--weights",
-            "weights/20_epoha_test.pt", "--hyp", "data/hyps/hyp_retail10k_5dim.yaml"]
+            "weights/20_epoha_test.pt", "--hyp", "data/hyps/hyp_retail10k_RGBD.yaml"]
 
         },
 
@@ -36,7 +36,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--data", "data/retail10k_5dim_debug.yaml", "--img", "1024","--weights", "weights/20_epoha_test.pt", "--batch", "16",
+            "args": ["--data", "data/retail10k_5dim_debug.yaml", "--imgsz", "1024","--weights", "weights/20_epoha_test.pt", "--batch", "16",
             "--name", "police_5dim_1024_8testidkbrate_valrun"]
 
         }

@@ -8,33 +8,25 @@ import time
 from PIL import Image
 
 
-data_folder = os.path.join("..", "..",  "data", "yolo_police10k")
+
+
+
+data_folder = os.path.join("..", "..",  "data", "retail10k")
 images_foldername = "images"
 images_path = os.path.join(data_folder, images_foldername)
 images = os.listdir(images_path)
 images.sort()
 for image in images:
-    pass
+    imgs = []
+    img = cv2.imread(os.path.join(images_path, image))
+    img2 = cv2.imread(os.path.join(images_path, image))
+    imgs.append(img)
+    imgs.append(img2)
+    imgs.append(img)
+    all_images = np.concatenate([*imgs], axis=2)
+    a = 1
+
 """
-data_folder = os.path.join("..", "..",  "data", "yolo_police10k")
-a = os.listdir(data_folder)
-edges_foldername = "edges"
-images_foldername = "images_stari"
-depths_foldername = "depth_masks"
-numpy_foldername = "numpy_matrices5dim"
-depth_maks_extension = "-dpt_beit_large_512.png"
-depth_to_grayscale = False
-
-edges_path = os.path.join(data_folder, edges_foldername)
-images_path = os.path.join(data_folder, images_foldername)
-depths_path = os.path.join(data_folder, depths_foldername)
-#edges = os.listdir(edges_path)
-images = os.listdir(images_path)
-depths = os.listdir(depths_path)
-depths.sort()
-images.sort()
-
-
 def write_img_to_disk(imgID):
     edge_image = cv2.imread(os.path.join(edges_path, imgID))
     image = cv2.imread(os.path.join(images_path, imgID))

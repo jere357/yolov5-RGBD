@@ -231,7 +231,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None):
     #TODO: dodaj kod di se gleda ako images ima vise kanala da onda radi kako BOG ZAPOVIDA!
     if images.shape[1] != 3:
         #TODO: multi channel code, only work for 5 channels rn huehue
-        images = images[:, 2:5, :, :]
+        images = images[:, 0:3, :, :]
     if isinstance(images, torch.Tensor):
         images = images.cpu().float().numpy()
     if isinstance(targets, torch.Tensor):

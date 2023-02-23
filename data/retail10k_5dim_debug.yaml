@@ -8,10 +8,10 @@
 
 
 # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
-path: ../../../data/yolo_police10k  # dataset root dir
-train: train_5dim_debug.txt  # train images (relative to 'path') 128 images
-val: val_5dim_debug.txt  # val images (relative to 'path') 128 images
-test: test_5dim.txt # test images (optional)
+path: ../../../data/retail10k  # dataset root dir
+train: train_debug.txt  # train images (relative to 'path') 128 images
+val: val_debug.txt  # val images (relative to 'path') 128 images
+test: test_debug.txt # test images (optional)
 
 # Classes
 names:

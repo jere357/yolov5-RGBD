@@ -198,7 +198,8 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                               image_weights=opt.image_weights,
                                               quad=opt.quad,
                                               prefix=colorstr('train: '),
-                                              shuffle=True)
+                                              shuffle=True,
+                                              multichannel=True)
     labels = np.concatenate(dataset.labels, 0)
     mlc = int(labels[:, 0].max())  # max label class
     assert mlc < nc, f'Label class {mlc} exceeds nc={nc} in {data}. Possible class labels are 0-{nc - 1}'
@@ -216,7 +217,9 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
                                        rank=-1,
                                        workers=workers * 2,
                                        pad=0.5,
+                                       multichannel= True,
                                        prefix=colorstr('val: '))[0]
+                                    
 
         if not resume:
             if not opt.noautoanchor:
@@ -283,8 +286,11 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             callbacks.run('on_train_batch_start')
             ni = i + nb * epoch  # number integrated batches (since train start)
             #TODO: sus ndvostruko djeljenje sa 255 ?=!!?!??!?!
+            slika = imgs[1]
+            #imgs je i dalje unit8 a to bas i nebi tia kad ga dilin sa 255 jeli
+            #slikisse_prije = imgs[:,0:3, :, :]
             imgs = imgs.to(device, non_blocking=True).float() / 255  # uint8 to float32, 0-255 to 0.0-1.0
-
+            #slikisse_posli = imgs[:,0:3, :, :]
             # Warmup
             if ni <= nw:
                 xi = [0, nw]  # x interp
@@ -348,7 +354,7 @@ def train(hyp, opt, device, callbacks):  # hyp is path/to/hyp.yaml or hyp dictio
             callbacks.run('on_train_epoch_end', epoch=epoch)
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights', 'ch'])
             final_epoch = (epoch + 1 == epochs) or stopper.possible_stop
-            if (not noval or final_epoch) and epoch % 5 == 0:  # Calculate mAP
+            if (not noval or final_epoch) and epoch % 10 == 0:  # Calculate mAP
                 results, maps, _ = validate.run(data_dict,
                                                 batch_size=batch_size // WORLD_SIZE * 2,
                                                 imgsz=imgsz,
