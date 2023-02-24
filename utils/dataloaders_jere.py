@@ -715,14 +715,15 @@ class LoadMultiChannelImagesAndLabels(Dataset):
         # Loads 1 image from dataset index 'i', returns (im, original hw, resized hw)
         im, f, fn = self.ims[i], self.im_files[i], self.npy_files[i],
         if im is None:  # not cached in RAM
-            if fn.exists():  # load npy
+            if False: #TODO: isprogramiraj lipo da ne cita cache
+            #if fn.exists():  # load npy
                 im = np.load(fn)
             else:  # read image
                 #TODO: odi napisat dobar ucitavanje kod i stackavanje featurea
-                if f.endswith('.npy'):
+                if False:
+                #if f.endswith('.npy'):
                     im = np.load(f)
                 else:
-                    #channel is a dict with keys: rgb, depth, etc, and values their respective foldernames
                     data_folder = os.path.join(str(f.split('/')[0:-1]))
                     data_folder2 = os.path.join(*(['/']+(f.split('/')[0:-2])))
                     channels = []
@@ -764,6 +765,7 @@ class LoadMultiChannelImagesAndLabels(Dataset):
         # Saves an image as an *.npy file for faster loading
         f = self.npy_files[i]
         if not f.exists():
+            #bolje ovo isprog za dubinu da radi hihi
             np.save(f.as_posix(), cv2.imread(self.im_files[i]))
 
     def load_mosaic(self, index):
@@ -1236,11 +1238,13 @@ class LoadImagesAndLabels(Dataset):
         # Loads 1 image from dataset index 'i', returns (im, original hw, resized hw)
         im, f, fn = self.ims[i], self.im_files[i], self.npy_files[i],
         if im is None:  # not cached in RAM
-            if fn.exists():  # load npy
+            if False: #TODO: currentlčy reading images fgrom disk doesnt work, ill get on it 
+            #if fn.exists():  # load npy
                 im = np.load(fn)
             else:  # read image
                 #TODO: odi napisat dobar ucitavanje kod i stackavanje featurea
-                if f.endswith('.npy'):
+                if False: #TODO: isti todo ka i gore
+                #if f.endswith('.npy'):
                     im = np.load(f)
                 else:
                     im = cv2.imread(f)  # BGR

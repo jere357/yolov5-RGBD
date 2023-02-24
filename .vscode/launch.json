@@ -11,7 +11,7 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--data", "data/retail10k_5dim.yaml", "--imgsz", "1024","--cfg", "models/yolov5n.yaml", "--batch", "16", "--cache", "ram",
+            "args": ["--data", "data/retail10k_4dim.yaml", "--imgsz", "1024","--cfg", "models/yolov5n.yaml", "--batch", "16", "--cache", "ram",
             "--optimizer", "SGD", "--epochs", "50","--name", "retail10k_5dim_test", "--hyp", "data/hyps/hyp_retail10k_RGBD.yaml"]
 
         },
