@@ -281,7 +281,7 @@ def draw_line(image: torch.Tensor, p1: torch.Tensor, p2: torch.Tensor, color: to
     return image
 
 
-def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = False, image_name_jebateisus="hehexd"):
+def visualise_detections_labels(detections, labels, im, LoGT, save_dir, random_number, write_to_disk = False, image_name_jebateisus="hehexd"):
     """
     im - image
     detections - predicted bounding boxes you wanna draw (red) (x1,y1,x2,y2) - exact pixels on image 
@@ -291,7 +291,7 @@ def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = Fa
     a=1
     #TODO: ODI NEGDI SE PRETVORI U SAMO CRINLO MRAJO NEMAN POJMA KAKO STA
     transform = torchvision.transforms.ToPILImage()
-    im=im*255*255 #i have no clue why i gotta multiply by but it works
+    im=im*255*255 #i have no clue why i gotta multiply by it 2 times but it works -- but why??????
     im = im.to(torch.uint8)
     lbls = labels.to(torch.int32)
     dets = detections.to(torch.int32)
@@ -305,13 +305,14 @@ def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = Fa
             torch.tensor([line[0],line[1]]),
             torch.tensor([line[2], line[3]]),
             color=torch.tensor([255,255,2], dtype=torch.uint8))
-        a=random.randint(1, 50)
         #if write_to_disk:
             #torchvision.io.write_png(im_drawn, f"slike/test{a}_torch.png")
         im_drawn = transform(im_drawn)
         ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_dataset(LoGT)}", fill=(222, 222, 222))
         if write_to_disk:
-            im_drawn.save(f"slike/test{a}{image_name_jebateisus}.png")
+            final_save_path = save_dir / 'images' / f"test{random_number}{image_name_jebateisus}.png"
+            im_drawn.save(final_save_path)
+            #im_drawn.save(f"slike/test{random_number}{image_name_jebateisus}.png")
             #torchvision.io.write_png(im_drawn, f"slike/test{a}.png")
             #torchvision.io.write_png(im.cpu(), f"slike/test{a}{image_name_jebateisus}_clean .png")
         #kornia.save_image(im_drawn, "test.png")
@@ -342,7 +343,7 @@ def visualise_detections_labels(detections, labels, im, LoGT, write_to_disk = Fa
     """
 
     
-def LoGT_loss(detections, labels, im, visualize = False):
+def LoGT_loss(detections, labels, im, save_dir,  visualize = False):
     """
     returns a LoGT matrix whether a label has a line going across it
 
@@ -358,7 +359,9 @@ def LoGT_loss(detections, labels, im, visualize = False):
     #jiou = jere_iou(best_box_per_label[:, :4], labels[:, 1:], im)
     detections = detections[:,:4]
     labels = labels[:,1:]
-    #TODO: best box per label se ne ponasa dobro kada neki GT box nije predictan uopce ?!
+    #TODO: best box per label se ne ponasa dobro kada neki GT box nije predictan uopce ?! !!!
+    #TODO: berst box per label ni logt loss mi ne rade dobro kada iman false positive, bar ja mis tako idk -u logt loss mi ulaze
+    #samo police koje nisu predictane, a skroz krivi predictioni ne pridonose lossu sta je krivo
     best_box_per_label = detections[torch.argmax(iou, dim=1)]
     #TODO: MAKNI DUPLIKATE IZ BEST BOX PER LABEL
     lines = bboxes_to_lines(best_box_per_label)
@@ -377,12 +380,21 @@ def LoGT_loss(detections, labels, im, visualize = False):
             pass
             #TODO:implementiraj gubitak iou ako je line_y izvan GT bboxa
     if visualize:
-        image = im[0:3,:,:]
-        image1 = im[1:4,:,:]
+        #samo rgb kanali
+        images_dir = save_dir / 'images'
+        images_dir.mkdir(exist_ok=True)
+        image_rgb = im[1:4,:,:]
+        #samo depth kanal
+        image_depth = im[0,:,:]
+        image_depth = image_depth.unsqueeze(0)
+        #image1 = im[1,:,:]
+        #image2 = im[2,:,:]
+        #image3 = im[3,:,:]
         #image2 = im[2:5,:,:]
+        random_number=random.randint(1, 50)
         #im_drawn = visualise_detections_labels(best_box_per_label, labels, im[2:5,:,:], LoGT, write_to_disk = True)
-        visualise_detections_labels(best_box_per_label, labels, image, LoGT, image_name_jebateisus = "NULA", write_to_disk = True)
-        visualise_detections_labels(best_box_per_label, labels, image1, LoGT, image_name_jebateisus = "JEDAN", write_to_disk = True)
+        visualise_detections_labels(best_box_per_label, labels, image_rgb, LoGT, save_dir, random_number, image_name_jebateisus = "rgb", write_to_disk = True)
+        visualise_detections_labels(best_box_per_label, labels, image_depth, LoGT, save_dir, random_number, image_name_jebateisus = "depth", write_to_disk = True)
         #visualise_detections_labels(best_box_per_label, labels, image2, LoGT, image_name_jebateisus = "DVA", write_to_disk = True)
         
     #kornia.utils.
@@ -470,7 +482,7 @@ def run(
         # Directories
         save_dir = increment_path(Path(project) / name, exist_ok=exist_ok)  # increment run
         (save_dir / 'labels' if save_txt else save_dir).mkdir(parents=True, exist_ok=True)  # make dir
-
+        (save_dir / 'slike').mkdir(parents=True, exist_ok=True)  # make dir for slike
         # Load model
         model = DetectMultiBackend(weights, device=device, dnn=dnn, data=data, fp16=half)
         stride, pt, jit, engine = model.stride, model.pt, model.jit, model.engine
@@ -592,7 +604,7 @@ def run(
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct = process_batch(predn, labelsn, iouv)
                 #TODO: pazi mozda ti fali *255
-                logt = LoGT_loss(predn.clone(), labelsn.clone(), im[si], visualize=True)
+                logt = LoGT_loss(predn.clone(), labelsn.clone(), im[si], save_dir, visualize = True)
                 #logt.to(device)
                 altim = im
                 if plots:
