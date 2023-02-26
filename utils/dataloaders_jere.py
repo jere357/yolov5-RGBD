@@ -571,8 +571,11 @@ class LoadMultiChannelImagesAndLabels(Dataset):
                     b += self.npy_files[i].stat().st_size
                 else:  # 'ram'
                     self.ims[i], self.im_hw0[i], self.im_hw[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
+                    tempslika = self.ims[i]
+                    temp_rgb = tempslika[:, :, 0:3]
+                    temp_depth = tempslika[:, :, 3]
                     b += self.ims[i].nbytes
-                pbar.desc = f'{prefix}Caching images ({b / gb:.1f}GB {cache_images})'
+                pbar.desc = f'{prefix}Caching images ({b / gb:.1f}GB {cache_images} 1 image takes up {b} bytes i suppose) and dtype is {self.ims[i].dtype}'
             pbar.close()
 
     def check_cache_ram(self, safety_margin=0.1, prefix=''):
@@ -747,16 +750,25 @@ class LoadMultiChannelImagesAndLabels(Dataset):
                             channels.append(depth_img_grayscale)
                         else:
                             raise Exception('channel feature not yet implemented (only rgb and depth for naowh)')
-                    im = np.concatenate([*channels], axis=2)
+                    #TODO: probaj sa dtype uint8 i fp16
+                    im = np.concatenate([*channels], axis=2, dtype=np.uint8)
                 assert im is not None, f'Image Not Found {f}'
             h0, w0 = im.shape[:2]  # orig hw
             r = self.img_size / max(h0, w0)  # ratio
             if r != 1:  # if sizes are not equal
                 interp = cv2.INTER_LINEAR if (self.augment or r > 1) else cv2.INTER_AREA
                 #im = cv2.resize(im, (int(w0 * r), int(h0 * r)), interpolation=interp)
-                #TODO: provjeri koristi li se dobra interpolacija pri ovin sranjima brajo neantipojmaonorazuis
+                #TODO: jel mi ovi skimage transform vrati u rangeu od 0 do 1 ? 
+                a=2
+                #TODO: dodaj anti aliasing odi mozda kad se downcaleaju slike kazu ljudi u dokumetaciji
                 im = skimage.transform.resize(im, (int(w0*r), int(h0*r)))
-                a=1
+                im = im * 255 #jer ovi skimage transform vrati u rangeu od 0 do 1 kakvi debili jel mos ti ovo virovat
+                im = im.astype(dtype=np.uint8)
+                #f64_depth = im[:, :, 3] 
+                #f64_rgb = im[:, :, 0:3]
+                #u8_depth = im_uint8[:, :, 3]
+                #u8_rgb = im_uint8[:, :, 0:3]
+                #a=1
                 #pass
 
             return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
@@ -938,7 +950,7 @@ class LoadMultiChannelImagesAndLabels(Dataset):
         return torch.stack(im4, 0), torch.cat(label4, 0), path4, shapes4
 
 
-
+"""
 class LoadImagesAndLabels(Dataset):
     # YOLOv5 train_loader/val_loader, loads images and labels for training and validation
     cache_version = 0.6  # dataset labels *.cache version
@@ -1085,6 +1097,7 @@ class LoadImagesAndLabels(Dataset):
             fcn = self.cache_images_to_disk if cache_images == 'disk' else self.load_image
             results = ThreadPool(NUM_THREADS).imap(fcn, range(n))
             pbar = tqdm(enumerate(results), total=n, bar_format=TQDM_BAR_FORMAT, disable=LOCAL_RANK > 0)
+            #TODO: provjeri shape i dtype ovog numpy arraya takoder provjeri jesu li vrijednosti izmedu 0 i 255
             for i, x in pbar:
                 if cache_images == 'disk':
                     b += self.npy_files[i].stat().st_size
@@ -1436,7 +1449,7 @@ class LoadImagesAndLabels(Dataset):
             lb[:, 0] = i  # add target image index for build_targets()
 
         return torch.stack(im4, 0), torch.cat(label4, 0), path4, shapes4
-
+"""
 
 # Ancillary functions --------------------------------------------------------------------------------------------------
 def flatten_recursive(path=DATASETS_DIR / 'coco128'):
