@@ -163,7 +163,7 @@ def create_dataloader(path,
                   num_workers=nw,
                   sampler=sampler,
                   pin_memory=PIN_MEMORY,
-                  collate_fn=LoadImagesAndLabels.collate_fn4 if quad else LoadImagesAndLabels.collate_fn,
+                  collate_fn=LoadMultiChannelImagesAndLabels.collate_fn4 if quad else LoadMultiChannelImagesAndLabels.collate_fn,
                   worker_init_fn=seed_worker,
                   generator=generator), dataset
 

@@ -291,7 +291,7 @@ def visualise_detections_labels(detections, labels, im, LoGT, save_dir, random_n
     a=1
     #TODO: ODI NEGDI SE PRETVORI U SAMO CRINLO MRAJO NEMAN POJMA KAKO STA
     transform = torchvision.transforms.ToPILImage()
-    im=im*255*255 #i have no clue why i gotta multiply by it 2 times but it works -- but why??????
+    im=im*255 
     im = im.to(torch.uint8)
     lbls = labels.to(torch.int32)
     dets = detections.to(torch.int32)
