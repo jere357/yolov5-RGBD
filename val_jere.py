@@ -391,7 +391,7 @@ def LoGT_loss(detections, labels, im, save_dir,  visualize = False):
         #image2 = im[2,:,:]
         #image3 = im[3,:,:]
         #image2 = im[2:5,:,:]
-        random_number=random.randint(1, 50)
+        random_number=random.randint(1, 100)
         #im_drawn = visualise_detections_labels(best_box_per_label, labels, im[2:5,:,:], LoGT, write_to_disk = True)
         visualise_detections_labels(best_box_per_label, labels, image_rgb, LoGT, save_dir, random_number, image_name_jebateisus = "rgb", write_to_disk = True)
         visualise_detections_labels(best_box_per_label, labels, image_depth, LoGT, save_dir, random_number, image_name_jebateisus = "depth", write_to_disk = True)
