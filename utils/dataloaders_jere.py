@@ -557,6 +557,7 @@ class LoadMultiChannelImagesAndLabels(Dataset):
         # Cache images into RAM/disk for faster training
         if cache_images == 'ram' and not self.check_cache_ram(prefix=prefix):
             cache_images = False
+        #TODO: ovo mozda pritvorit u multiprocessing Array
         self.ims = [None] * n
         self.npy_files = [Path(f).with_suffix('.npy') for f in self.im_files]
         if cache_images:
@@ -587,7 +588,7 @@ class LoadMultiChannelImagesAndLabels(Dataset):
             b += im.nbytes * ratio ** 2
         #TODO: isprogrmairaj normalnu provjeru koliko ti triba rama s obziron koliko ces kanala imat u slikci
         mem_required = b * self.n / n  # GB required to cache dataset into RAM
-        mem_required = 4/3 * mem_required
+        #mem_required = 4/3 * mem_required
         mem = psutil.virtual_memory()
         cache = mem_required * (1 + safety_margin) < mem.available  # to cache or not to cache, that is the question
         if not cache:
@@ -1090,7 +1091,7 @@ class LoadImagesAndLabels(Dataset):
                 else:  # 'ram'
                     self.ims[i], self.im_hw0[i], self.im_hw[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
                     b += self.ims[i].nbytes
-                pbar.desc = f'{prefix}Caching images ({b / gb:.1f}GB {cache_images})'
+                pbar.desc = f'{prefix}Caching images ({b / gb:.1f}GB {cache_images} 1 image takes up {b} bytes i suppose)'
             pbar.close()
 
     def check_cache_ram(self, safety_margin=0.1, prefix=''):
