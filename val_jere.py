@@ -291,7 +291,7 @@ def visualise_detections_labels(detections, labels, im, LoGT, save_dir, random_n
     a=1
     #TODO: ODI NEGDI SE PRETVORI U SAMO CRINLO MRAJO NEMAN POJMA KAKO STA
     transform = torchvision.transforms.ToPILImage()
-    im=im*255*255 #i have no clue why i gotta multiply by it 2 times but it works -- but why??????
+    im=im*255 
     im = im.to(torch.uint8)
     lbls = labels.to(torch.int32)
     dets = detections.to(torch.int32)
@@ -391,7 +391,7 @@ def LoGT_loss(detections, labels, im, save_dir,  visualize = False):
         #image2 = im[2,:,:]
         #image3 = im[3,:,:]
         #image2 = im[2:5,:,:]
-        random_number=random.randint(1, 50)
+        random_number=random.randint(1, 100)
         #im_drawn = visualise_detections_labels(best_box_per_label, labels, im[2:5,:,:], LoGT, write_to_disk = True)
         visualise_detections_labels(best_box_per_label, labels, image_rgb, LoGT, save_dir, random_number, image_name_jebateisus = "rgb", write_to_disk = True)
         visualise_detections_labels(best_box_per_label, labels, image_depth, LoGT, save_dir, random_number, image_name_jebateisus = "depth", write_to_disk = True)

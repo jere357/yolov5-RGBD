@@ -5,14 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "RGDB slike train ",
+            "name": "RGDB slike train debug",
             "type": "python",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--data", "data/retail10k_4dim.yaml", "--imgsz", "1024","--cfg", "models/yolov5n.yaml", "--batch", "16", "--cache", "ram",
-            "--optimizer", "SGD", "--epochs", "50","--name", "retail10k_5dim_test", "--hyp", "data/hyps/hyp_retail10k_RGBD.yaml"]
+            "args": ["--data", "data/retail10k_5dim_debug.yaml", "--imgsz", "1024","--cfg", "models/yolov5n.yaml", "--batch", "16", "--cache", "ram",
+            "--optimizer", "SGD", "--epochs", "10","--name", "debug_sranja", "--hyp", "data/hyps/hyp_retail10k_RGBD.yaml", "--workers", "1"]
 
         },
 
