@@ -300,11 +300,15 @@ def visualise_detections_labels(detections, labels, im, LoGT, save_dir, random_n
         im_drawn = torchvision.utils.draw_bounding_boxes(im_drawn, boxes=dets, labels=[f"   {number}" for number in range(len(dets))], width=2, colors='red', fill=False, font_size=88)
         lines = bboxes_to_lines(dets)
         for line in lines:
-            #im_drawn[:, y1, x1 : x2+1] = 
-            im_drawn = draw_line(im_drawn,
-            torch.tensor([line[0],line[1]]),
-            torch.tensor([line[2], line[3]]),
-            color=torch.tensor([255,255,2], dtype=torch.uint8))
+            #im_drawn[:, y1, x1 : x2+1] =
+            try:
+                im_drawn = draw_line(im_drawn,
+                torch.tensor([line[0],line[1]]),
+                torch.tensor([line[2], line[3]]),
+                color=torch.tensor([255,255,2], dtype=torch.uint8))
+            except (IndexError, ValueError, RuntimeError):
+                LOGGER.info(f"for image shape {im.shape} img_name{image_name_jebateisus}sjebalo se crtanje: {e} ")
+                im_drawn = None #neuspjeh na gitarama
         #if write_to_disk:
             #torchvision.io.write_png(im_drawn, f"slike/test{a}_torch.png")
         im_drawn = transform(im_drawn)
