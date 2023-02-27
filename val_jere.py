@@ -306,14 +306,14 @@ def visualise_detections_labels(detections, labels, im, LoGT, save_dir, random_n
                 torch.tensor([line[0],line[1]]),
                 torch.tensor([line[2], line[3]]),
                 color=torch.tensor([255,255,2], dtype=torch.uint8))
-            except (IndexError, ValueError, RuntimeError):
+            except (IndexError, ValueError, RuntimeError) as e:
                 LOGGER.info(f"for image shape {im.shape} img_name{image_name_jebateisus}sjebalo se crtanje: {e} ")
                 im_drawn = None #neuspjeh na gitarama
         #if write_to_disk:
             #torchvision.io.write_png(im_drawn, f"slike/test{a}_torch.png")
-        im_drawn = transform(im_drawn)
-        ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_dataset(LoGT)}", fill=(222, 222, 222))
-        if write_to_disk:
+        if write_to_disk and im_drawn is not None:
+            im_drawn = transform(im_drawn)
+            ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_dataset(LoGT)}", fill=(222, 222, 222))
             final_save_path = save_dir / 'images' / f"test{random_number}{image_name_jebateisus}.png"
             im_drawn.save(final_save_path)
             #im_drawn.save(f"slike/test{random_number}{image_name_jebateisus}.png")
