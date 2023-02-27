@@ -306,7 +306,7 @@ def visualise_detections_labels(detections, labels, im, LoGT, save_dir, random_n
                 torch.tensor([line[0],line[1]]),
                 torch.tensor([line[2], line[3]]),
                 color=torch.tensor([255,255,2], dtype=torch.uint8))
-            except (IndexError, ValueError, RuntimeError) as e:
+            except (IndexError, ValueError, RuntimeError, AttributeError) as e:
                 LOGGER.info(f"for image shape {im.shape} img_name{image_name_jebateisus}sjebalo se crtanje: {e} ")
                 im_drawn = None #neuspjeh na gitarama
         #if write_to_disk:
