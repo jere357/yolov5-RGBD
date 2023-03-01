@@ -306,14 +306,14 @@ def visualise_detections_labels(detections, labels, im, LoGT, save_dir, random_n
                 torch.tensor([line[0],line[1]]),
                 torch.tensor([line[2], line[3]]),
                 color=torch.tensor([255,255,2], dtype=torch.uint8))
-            except (IndexError, ValueError, RuntimeError):
-                LOGGER.info(f"for image shape {im.shape} img_name{image_name_jebateisus}sjebalo se crtanje: {e} ")
+            except (IndexError, ValueError, RuntimeError, AttributeError) as e:
+                #LOGGER.info(f"for image shape {im.shape} img_name{image_name_jebateisus}sjebalo se crtanje: {e} ")
                 im_drawn = None #neuspjeh na gitarama
         #if write_to_disk:
             #torchvision.io.write_png(im_drawn, f"slike/test{a}_torch.png")
-        im_drawn = transform(im_drawn)
-        ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_dataset(LoGT)}", fill=(222, 222, 222))
-        if write_to_disk:
+        if write_to_disk and im_drawn is not None:
+            im_drawn = transform(im_drawn)
+            ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_dataset(LoGT)}", fill=(222, 222, 222))
             final_save_path = save_dir / 'images' / f"test{random_number}{image_name_jebateisus}.png"
             im_drawn.save(final_save_path)
             #im_drawn.save(f"slike/test{random_number}{image_name_jebateisus}.png")
@@ -321,7 +321,7 @@ def visualise_detections_labels(detections, labels, im, LoGT, save_dir, random_n
             #torchvision.io.write_png(im.cpu(), f"slike/test{a}{image_name_jebateisus}_clean .png")
         #kornia.save_image(im_drawn, "test.png")
     except (ValueError, RuntimeError) as e:
-        LOGGER.info(f"for image shape {im.shape} img_name{image_name_jebateisus}sjebalo se crtanje: {e} ")
+        #LOGGER.info(f"for image shape {im.shape} img_name{image_name_jebateisus}sjebalo se crtanje: {e} ")
         im_drawn = None #neuspjeh na gitarama
     """
     im_drawn = torchvision.utils.draw_bounding_boxes(im, boxes=lbls, labels=[f"{number}" for number in range(len(lbls))], width=6, colors='green', fill=True, font_size=88)
@@ -361,10 +361,11 @@ def LoGT_loss(detections, labels, im, save_dir,  visualize = False):
     """
     iou = box_iou(labels[:, 1:], detections[:, :4])
     #jiou = jere_iou(best_box_per_label[:, :4], labels[:, 1:], im)
+    detections_with_confidences = detections[:, :5]
     detections = detections[:,:4]
     labels = labels[:,1:]
     #TODO: best box per label se ne ponasa dobro kada neki GT box nije predictan uopce ?! !!!
-    #TODO: berst box per label ni logt loss mi ne rade dobro kada iman false positive, bar ja mis tako idk -u logt loss mi ulaze
+    #TODO: best box per label ni logt loss mi ne rade dobro kada iman false positive, bar ja mis tako idk -u logt loss mi ulaze
     #samo police koje nisu predictane, a skroz krivi predictioni ne pridonose lossu sta je krivo
     best_box_per_label = detections[torch.argmax(iou, dim=1)]
     #TODO: MAKNI DUPLIKATE IZ BEST BOX PER LABEL
@@ -738,6 +739,6 @@ def main(opt):
             plot_val_study(x=x)  # plot
 
 if __name__ =="__main__":
-    opt = parse_opt(["--data", "data/retail10k_5dim_debug.yaml", "--weights", "weights/20_epoha_test.pt", "--imgsz", "1024", "--task", "val"])
+    opt = parse_opt(["--data", "data/retail10k.yaml", "--weights", "weights/rgbd_model.pt", "--imgsz", "1024", "--task", "val"])
     #opt = parse_opt()
     main(opt)
