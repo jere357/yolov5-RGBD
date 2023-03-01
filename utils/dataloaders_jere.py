@@ -575,7 +575,7 @@ class LoadMultiChannelImagesAndLabels(Dataset):
                     temp_rgb = tempslika[:, :, 0:3]
                     temp_depth = tempslika[:, :, 3]
                     b += self.ims[i].nbytes
-                pbar.desc = f'{prefix}Caching images ({b / gb:.1f}GB {cache_images} 1 image takes up {b} bytes i suppose) and dtype is {self.ims[i].dtype}'
+                pbar.desc = f'{prefix}Caching images ({b / gb:.1f}GB {cache_images} of dtype {self.ims[i].dtype}'
             pbar.close()
 
     def check_cache_ram(self, safety_margin=0.1, prefix=''):
@@ -712,7 +712,6 @@ class LoadMultiChannelImagesAndLabels(Dataset):
         # Convert
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
-
         return torch.from_numpy(img), labels_out, self.im_files[index], shapes
 
     def load_image(self, i):
@@ -1473,7 +1472,6 @@ def extract_boxes(path=DATASETS_DIR / 'coco128'):  # from utils.dataloaders impo
             # image
             im = cv2.imread(str(im_file))[..., ::-1]  # BGR to RGB
             h, w = im.shape[:2]
-
             # labels
             lb_file = Path(img2label_paths([str(im_file)])[0])
             if Path(lb_file).exists():

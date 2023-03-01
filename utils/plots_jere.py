@@ -275,7 +275,6 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None):
             classes = ti[:, 1].astype('int')
             labels = ti.shape[1] == 6  # labels if no conf column
             conf = None if labels else ti[:, 6]  # check for confidence presence (label vs pred)
-
             if boxes.shape[1]:
                 if boxes.max() <= 1.01:  # if normalized with tolerance 0.01
                     boxes[[0, 2]] *= w  # scale to pixels
