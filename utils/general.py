@@ -587,7 +587,11 @@ def check_amp(model):
         return True
     except Exception as e:
         help_url = 'https://github.com/ultralytics/yolov5/issues/7908'
+<<<<<<< HEAD
         LOGGER.warning(f'{prefix}checks failed ❌, disabling Automatic Mixed Precision. with error: {e}')
+=======
+        LOGGER.warning(f'{prefix}checks failed ❌, disabling Automatic Mixed Precision. See {help_url} exception: {e}')
+>>>>>>> dataloader_fix_attempt
         return False
 
 
