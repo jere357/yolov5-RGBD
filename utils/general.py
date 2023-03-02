@@ -580,22 +580,15 @@ def check_amp(model):
         return False  # AMP only used on CUDA devices
     f = ROOT / 'data' / 'images' / 'bus.jpg'  # image to check
     #TODO: loadaj sliku sa dobrin brojen kanala boktejeba u pick up0jawfggh
-    im = f if f.exists() else 'https://ultralytics.com/images/bus.jpg' if check_online() else np.ones((640, 640, 3))
+    #im = f if f.exists() else 'https://ultralytics.com/images/bus.jpg' if check_online() else np.ones((640, 640, 4))
+    im = np.ones((640, 640, 4))
     try:
         assert amp_allclose(deepcopy(model), im) or amp_allclose(DetectMultiBackend('yolov5n.pt', device), im)
         LOGGER.info(f'{prefix}checks passed ✅')
         return True
     except Exception as e:
         help_url = 'https://github.com/ultralytics/yolov5/issues/7908'
-<<<<<<< HEAD
-<<<<<<< HEAD
         LOGGER.warning(f'{prefix}checks failed ❌, disabling Automatic Mixed Precision. with error: {e}')
-=======
-        LOGGER.warning(f'{prefix}checks failed ❌, disabling Automatic Mixed Precision. See {help_url} exception: {e}')
->>>>>>> dataloader_fix_attempt
-=======
-        LOGGER.warning(f'{prefix}checks failed ❌, disabling Automatic Mixed Precision. See {help_url} exception: {e}')
->>>>>>> added printing AMP error
         return False
 
 

@@ -517,20 +517,23 @@ def run(
         if pt and not single_cls:  # check --weights are trained on --data
             ncm = model.model.nc
             assert ncm == nc, f'{weights} ({ncm} classes) trained on different --data than what you passed ({nc} ' \
-                              f'classes). Pass correct combination of --weights and --data that are trained together.'
-        #TODO: bolja definicija broja kanala 
-        model.warmup(imgsz=(1 if pt else batch_size, 5, imgsz, imgsz))  # warmup
+                              f'classes). Pass correct combination of --weights and --data that are trained together.'         
+        model.warmup(imgsz=(1 if pt else batch_size, model.model.yaml['ch'], imgsz, imgsz))  # warmup
         pad, rect = (0.0, False) if task == 'speed' else (0.5, pt)  # square inference for benchmarks
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
+        #TODO: rect = False hardkodiran jer pretrainer modeli imaju pt= True -> rect=True
+        rect=False
         dataloader = create_dataloader(data[task],
                                        imgsz,
                                        batch_size,
                                        stride,
                                        single_cls,
                                        pad=pad,
+                                       hyp=model.model.hyp,
                                        rect=rect,
                                        workers=workers,
-                                       prefix=colorstr(f'{task}: '))[0]
+                                       prefix=colorstr(f'{task}: '),
+                                       multichannel=True)[0]
 
     seen = 0
     confusion_matrix = ConfusionMatrix(nc=nc)
@@ -601,7 +604,6 @@ def run(
                 pred[:, 5] = 0
             predn = pred.clone()
             #scale_boxes(im[si].shape[1:], predn[:, :4], shape, shapes[si][1])  # native-space pred
-
             # Evaluate
             if nl:
                 tbox = xywh2xyxy(labels[:, 1:5])  # target boxes
@@ -739,6 +741,6 @@ def main(opt):
             plot_val_study(x=x)  # plot
 
 if __name__ =="__main__":
-    opt = parse_opt(["--data", "data/retail10k.yaml", "--weights", "weights/rgbd_model.pt", "--imgsz", "1024", "--task", "val"])
+    opt = parse_opt(["--data", "data/retail10k_4dim.yaml", "--weights", "weights/rgbd_adam_300ep.pt", "--imgsz", "1024", "--task", "val", ])
     #opt = parse_opt()
     main(opt)
