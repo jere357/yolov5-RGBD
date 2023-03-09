@@ -11,7 +11,8 @@ import kornia
 import cv2
 from matplotlib import pyplot as plt
 import random
-from PIL import Image, ImageDraw
+from typing import Any, BinaryIO, List, Optional, Tuple, Union
+from PIL import Image, ImageColor, ImageDraw, ImageFont
 
 
 FILE = Path(__file__).resolve()
@@ -60,6 +61,116 @@ def parse_opt(arguments):
     opt.save_txt |= opt.save_hybrid
     print_args(vars(opt))
     return opt
+
+
+@torch.no_grad()
+def draw_bounding_boxes(
+    image: torch.Tensor,
+    boxes: torch.Tensor,
+    labels: Optional[List[str]] = None,
+    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
+    fill: Optional[bool] = False,
+    width: int = 1,
+    font: Optional[str] = None,
+    font_size: Optional[int] = None,
+) -> torch.Tensor:
+
+    """
+    Draws bounding boxes on given image.
+    The values of the input image should be uint8 between 0 and 255.
+    If fill is True, Resulting Tensor should be saved as PNG image.
+
+    Args:
+        image (Tensor): Tensor of shape (C x H x W) and dtype uint8.
+        boxes (Tensor): Tensor of size (N, 4) containing bounding boxes in (xmin, ymin, xmax, ymax) format. Note that
+            the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
+            `0 <= ymin < ymax < H`.
+        labels (List[str]): List containing the labels of bounding boxes.
+        colors (color or list of colors, optional): List containing the colors
+            of the boxes or single color for all boxes. The color can be represented as
+            PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
+            By default, random colors are generated for boxes.
+        fill (bool): If `True` fills the bounding box with specified color.
+        width (int): Width of bounding box.
+        font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
+            also search in other directories, such as the `fonts/` directory on Windows or `/Library/Fonts/`,
+            `/System/Library/Fonts/` and `~/Library/Fonts/` on macOS.
+        font_size (int): The requested font size in points.
+
+    Returns:
+        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
+    """
+
+    if not isinstance(image, torch.Tensor):
+        raise TypeError(f"Tensor expected, got {type(image)}")
+    elif image.dtype != torch.uint8:
+        raise ValueError(f"Tensor uint8 expected, got {image.dtype}")
+    elif image.dim() != 3:
+        raise ValueError("Pass individual images, not batches")
+    elif image.size(0) not in {1, 3}:
+        raise ValueError("Only grayscale and RGB images are supported")
+    elif (boxes[:, 0] > boxes[:, 2]).any() or (boxes[:, 1] > boxes[:, 3]).any():
+        raise ValueError(
+            "Boxes need to be in (xmin, ymin, xmax, ymax) format. Use torchvision.ops.box_convert to convert them"
+        )
+
+    num_boxes = boxes.shape[0]
+
+    if num_boxes == 0:
+        warnings.warn("boxes doesn't contain any box. No box was drawn")
+        return image
+
+    if labels is None:
+        labels: Union[List[str], List[None]] = [None] * num_boxes  # type: ignore[no-redef]
+    elif len(labels) != num_boxes:
+        raise ValueError(
+            f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
+        )
+
+    if colors is None:
+        colors = _generate_color_palette(num_boxes)
+    elif isinstance(colors, list):
+        if len(colors) < num_boxes:
+            raise ValueError(f"Number of colors ({len(colors)}) is less than number of boxes ({num_boxes}). ")
+    else:  # colors specifies a single color for all boxes
+        colors = [colors] * num_boxes
+
+    colors = [(ImageColor.getrgb(color) if isinstance(color, str) else color) for color in colors]
+
+    if font is None:
+        if font_size is not None:
+            pass
+            #LOGGER.info("Argument 'font_size' will be ignored since 'font' is not set.")
+        txt_font = ImageFont.load_default()
+    else:
+        txt_font = ImageFont.truetype(font=font, size=font_size or 20)
+
+    # Handle Grayscale images
+    if image.size(0) == 1:
+        image = torch.tile(image, (3, 1, 1))
+
+    ndarr = image.permute(1, 2, 0).cpu().numpy()
+    img_to_draw = Image.fromarray(ndarr)
+    img_boxes = boxes.to(torch.int64).tolist()
+
+    if fill:
+        draw = ImageDraw.Draw(img_to_draw, "RGBA")
+    else:
+        draw = ImageDraw.Draw(img_to_draw)
+
+    for bbox, color, label in zip(img_boxes, colors, labels):  # type: ignore[arg-type]
+        if fill:
+            fill_color = color + (100,)
+            draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
+        else:
+            draw.rectangle(bbox, width=width, outline=color)
+
+        if label is not None:
+            margin = width + 1
+            draw.text((bbox[0] + margin, bbox[1] - 15), label, fill=color, font=txt_font)
+
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+
 
 def box_iou(box1, box2, eps=1e-7):
     # https://github.com/pytorch/vision/blob/master/torchvision/ops/boxes.py
@@ -280,24 +391,25 @@ def draw_line(image: torch.Tensor, p1: torch.Tensor, p2: torch.Tensor, color: to
 
     return image
 
-
-def visualise_detections_labels(detections, labels, im, LoGT, save_dir, random_number, write_to_disk = False, image_name_jebateisus="hehexd"):
+def visualise_detections_labels(detections, confidences, labels, im, LoGT, save_dir, random_number, write_to_disk = False, image_name_jebateisus="hehexd"):
     """
     im - image
     detections - predicted bounding boxes you wanna draw (red) (x1,y1,x2,y2) - exact pixels on image 
     labels - GT bboxes u wanna draw (green) (x1,y1,x2,y2) - exact pixels on image
     only works for one class
     """
-    a=1
-    #TODO: ODI NEGDI SE PRETVORI U SAMO CRINLO MRAJO NEMAN POJMA KAKO STA
     transform = torchvision.transforms.ToPILImage()
     im=im*255 
     im = im.to(torch.uint8)
     lbls = labels.to(torch.int32)
     dets = detections.to(torch.int32)
+
     try:
-        im_drawn = torchvision.utils.draw_bounding_boxes(im, boxes=lbls, labels=[f"{number}" for number in range(len(lbls))], width=6, colors='green', fill=True, font_size=88)
-        im_drawn = torchvision.utils.draw_bounding_boxes(im_drawn, boxes=dets, labels=[f"   {number}" for number in range(len(dets))], width=2, colors='red', fill=False, font_size=88)
+        #im_drawn = torchvision.utils.draw_bounding_boxes(im, boxes=lbls, labels=[f"id:{number}" for number in range(len(lbls))], width=6, colors='green', fill=True, font_size=88)
+        #im_drawn = torchvision.utils.draw_bounding_boxes(im_drawn, boxes=dets, labels=[f"       id:{number} confidence:{confidences[number]}%" for number in range(len(dets))], width=2, colors='red', fill=False, font_size=88)
+        im_drawn = draw_bounding_boxes(im, boxes=lbls, labels=[f"id:{number}" for number in range(len(lbls))], width=6, colors='green', fill=True, font_size=88)
+        im_drawn = draw_bounding_boxes(im_drawn, boxes=dets, labels=[f"       id:{number} confidence:{confidences[number]}%" for number in range(len(dets))], width=2, colors='red', fill=False, font_size=88)
+
         lines = bboxes_to_lines(dets)
         for line in lines:
             #im_drawn[:, y1, x1 : x2+1] =
@@ -307,13 +419,13 @@ def visualise_detections_labels(detections, labels, im, LoGT, save_dir, random_n
                 torch.tensor([line[2], line[3]]),
                 color=torch.tensor([255,255,2], dtype=torch.uint8))
             except (IndexError, ValueError, RuntimeError, AttributeError) as e:
-                #LOGGER.info(f"for image shape {im.shape} img_name{image_name_jebateisus}sjebalo se crtanje: {e} ")
+                LOGGER.info(f"for image shape {im.shape} img_name{image_name_jebateisus}sjebalo se crtanje: {e} ")
                 im_drawn = None #neuspjeh na gitarama
         #if write_to_disk:
             #torchvision.io.write_png(im_drawn, f"slike/test{a}_torch.png")
         if write_to_disk and im_drawn is not None:
             im_drawn = transform(im_drawn)
-            ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_dataset(LoGT)}", fill=(222, 222, 222))
+            ImageDraw.Draw(im_drawn).text((10, 10), f"LoGT: {LoGT} score:{calculate_logt_on_image(LoGT)}", fill=(222, 222, 222))
             final_save_path = save_dir / 'images' / f"test{random_number}{image_name_jebateisus}.png"
             im_drawn.save(final_save_path)
             #im_drawn.save(f"slike/test{random_number}{image_name_jebateisus}.png")
@@ -321,8 +433,9 @@ def visualise_detections_labels(detections, labels, im, LoGT, save_dir, random_n
             #torchvision.io.write_png(im.cpu(), f"slike/test{a}{image_name_jebateisus}_clean .png")
         #kornia.save_image(im_drawn, "test.png")
     except (ValueError, RuntimeError) as e:
-        #LOGGER.info(f"for image shape {im.shape} img_name{image_name_jebateisus}sjebalo se crtanje: {e} ")
+        LOGGER.info(f"for image shape {im.shape} img_name{image_name_jebateisus}sjebalo se crtanje: {e} ")
         im_drawn = None #neuspjeh na gitarama
+    return im_drawn
     """
     im_drawn = torchvision.utils.draw_bounding_boxes(im, boxes=lbls, labels=[f"{number}" for number in range(len(lbls))], width=6, colors='green', fill=True, font_size=88)
     im_drawn = torchvision.utils.draw_bounding_boxes(im_drawn, boxes=dets, labels=[f"   {number}" for number in range(len(dets))], width=2, colors='red', fill=False, font_size=88)
@@ -352,23 +465,24 @@ def LoGT_loss(detections, labels, im, save_dir,  visualize = False):
     returns a LoGT matrix whether a label has a line going across it
 
     Args:
-        detections (torch.tensor): [Mx4] output of yolo predictions 
+        detections (torch.tensor): [Mx5] output of yolo predictions 
         labels (torch.tensor): [Nx4] ground truths in xyxy format
         im (torch.tensor): img CxHxW
 
     Returns:
-        LoGT (torch.tensor): LoGT matrix (LoGT = Line over Ground Truth [N]
+        LoGT (torch.tensor): LoGT matrix LoGT = Line over Ground Truth vector [N]
     """
     iou = box_iou(labels[:, 1:], detections[:, :4])
     #jiou = jere_iou(best_box_per_label[:, :4], labels[:, 1:], im)
-    detections_with_confidences = detections[:, :5]
+    confidences = (detections[:, 4]*100).to(torch.int32)
     detections = detections[:,:4]
     labels = labels[:,1:]
     #TODO: best box per label se ne ponasa dobro kada neki GT box nije predictan uopce ?! !!!
     #TODO: best box per label ni logt loss mi ne rade dobro kada iman false positive, bar ja mis tako idk -u logt loss mi ulaze
     #samo police koje nisu predictane, a skroz krivi predictioni ne pridonose lossu sta je krivo
     best_box_per_label = detections[torch.argmax(iou, dim=1)]
-    #TODO: MAKNI DUPLIKATE IZ BEST BOX PER LABEL
+    #remove duplicates which occur when there is a missed shelf
+    best_box_per_label = torch.unique(best_box_per_label, dim=0)
     lines = bboxes_to_lines(best_box_per_label)
     #assert(detections.shape[0] == lines.shape[0])
     if labels.shape[0] != best_box_per_label.shape[0]:
@@ -376,10 +490,11 @@ def LoGT_loss(detections, labels, im, save_dir,  visualize = False):
     LoGT = torch.zeros(labels.shape[0], dtype=torch.float32, device=labels.device)
     for i in range(lines.shape[0]):
         line_y = (lines[i][1] + lines[i][3]) / 2
+        #TODO: this shit wants the labels and preds to be sorted hte same way but theryre never gonna be
+        #just implement some O(n²) method where you compare every label to every prediction 
         if labels[i][1] < line_y < labels[i][3]:
         #if line_y > best_box_per_label[i][1] and line_y < best_box_per_label[i][3]:
             LoGT[i] = torch.tensor(1)
-            #print("LINE Y IS IN DETECTION")
         else:
             LoGT[i] = torch.tensor(0)
             pass
@@ -398,18 +513,80 @@ def LoGT_loss(detections, labels, im, save_dir,  visualize = False):
         #image2 = im[2:5,:,:]
         random_number=random.randint(1, 100)
         #im_drawn = visualise_detections_labels(best_box_per_label, labels, im[2:5,:,:], LoGT, write_to_disk = True)
-        visualise_detections_labels(best_box_per_label, labels, image_rgb, LoGT, save_dir, random_number, image_name_jebateisus = "rgb", write_to_disk = True)
-        visualise_detections_labels(best_box_per_label, labels, image_depth, LoGT, save_dir, random_number, image_name_jebateisus = "depth", write_to_disk = True)
+        imaggio = visualise_detections_labels(best_box_per_label, confidences, labels, image_rgb, LoGT, save_dir, random_number, image_name_jebateisus = "rgb", write_to_disk = True)
+        visualise_detections_labels(best_box_per_label, confidences, labels, image_depth, LoGT, save_dir, random_number, image_name_jebateisus = "depth", write_to_disk = True)
         #visualise_detections_labels(best_box_per_label, labels, image2, LoGT, image_name_jebateisus = "DVA", write_to_disk = True)
         
     #kornia.utils.
     return LoGT
         
-def calculate_logt_on_dataset(logt_on_dataset):
+    
+def LoGT_loss_matrix(detections, labels, im, save_dir,  visualize = False):
+    """
+    returns a LoGT matrix whether a label has a line going across it
+    Args:
+        detections (torch.tensor): [Mx6] output of yolo predictions 
+        labels (torch.tensor): [Nx5] ground truths in xyxy format
+        im (torch.tensor): img CxHxW
+    Returns:
+        LoGT (torch.tensor): LoGT matrix (LoGT = Line over Ground Truth vector [max(N,M)]
+    """
+    iou = box_iou(labels[:, 1:], detections[:, :4])
+    confidences = (detections[:, 4]*100).to(torch.int32)
+    detections = detections[:,:4]
+    labels = labels[:,1:]
+    #samo police koje nisu predictane, a skroz krivi predictioni ne pridonose lossu sta je krivo
+    """
+    best_box_per_label = detections[torch.argmax(iou, dim=1)]
+
+    #remove duplicates which occur when there is a missed shelf
+    best_box_per_label = torch.unique(best_box_per_label, dim=0)
+    lines = bboxes_to_lines(best_box_per_label)
+    #assert(detections.shape[0] == lines.shape[0])
+    if labels.shape[0] != best_box_per_label.shape[0]:
+        LOGGER.info("alo alo falija si jednu ili vise kutija") 
+    """
+    detections_as_lines = bboxes_to_lines(detections)
+    #labels_as_lines = bboxes_to_lines(labels)
+    LoGT = torch.zeros(labels.shape[0], dtype=torch.float32, device=labels.device)
+    LoGT_matrix = torch.zeros((detections.shape[0], labels.shape[0]), dtype=torch.float32, device=labels.device) #this should be int32 maybe but this way its future proof for when logt loss wont be discrete 
+    for i in range(len(labels)):
+        for j in range(len(detections_as_lines)):
+            if labels[i][1] <= detections_as_lines[j][1] <= labels[i][3]:
+                LoGT_matrix[j][i] = 1
+            else:
+                LoGT_matrix[j][i] = 0
+    if visualize:
+        #samo rgb kanali
+        images_dir = save_dir / 'images'
+        images_dir.mkdir(exist_ok=True)
+        image_rgb = im[1:4,:,:]
+        #samo depth kanal
+        image_depth = im[0,:,:]
+        image_depth = image_depth.unsqueeze(0)
+        #image1 = im[1,:,:]
+        #image2 = im[2,:,:]
+        #image3 = im[3,:,:]
+        #image2 = im[2:5,:,:]
+        random_number=random.randint(1, 100)
+        #im_drawn = visualise_detections_labels(best_box_per_label, labels, im[2:5,:,:], LoGT, write_to_disk = True)
+        imaggio = visualise_detections_labels(detections, confidences, labels, image_rgb, LoGT_matrix, save_dir, random_number, image_name_jebateisus = "rgb", write_to_disk = True)
+        visualise_detections_labels(detections, confidences, labels, image_depth, LoGT_matrix, save_dir, random_number, image_name_jebateisus = "depth", write_to_disk = True)
+        #visualise_detections_labels(best_box_per_label, labels, image2, LoGT, image_name_jebateisus = "DVA", write_to_disk = True)
+        
+    return torch.sum(LoGT_matrix, dim=0)
+        
+
+def calculate_logt_on_dataset(logt):
     #TODO: make it better not just 0s and 1s
-    pass
-    correct_predictions = torch.count_nonzero(logt_on_dataset)
-    return (correct_predictions / logt_on_dataset.shape[0]).cpu().item()
+    correct_predictions = torch.count_nonzero(logt)
+    #only slightly different for matrix logt and old+bad logt
+    return (correct_predictions / logt.shape[0]).cpu().item()
+
+def calculate_logt_on_image(logt):
+    correct_predictions = torch.count_nonzero(logt)
+    #only slightly different for matrix logt and old+bad logt
+    return (correct_predictions / logt.shape[1]).cpu().item()
 
 
 
@@ -427,7 +604,6 @@ def process_batch(detections, labels, iouv):
     correct = np.zeros((detections.shape[0], iouv.shape[0])).astype(bool)
     iou = box_iou(labels[:, 1:], detections[:, :4])
     #UZET BOX SA NAJVECIN IOU IZ ZA SVAKI LABEL I ONDA NA NJIH PRIMJENIT MOJ ALGO
-    #TODO: MOJA METRIKA POKLAPANJA
     #best_box_per_label = detections[torch.argmax(iou, dim=1)]
     #jere_iou = box_iou(labels[:, 1:], detections[:, :4])
     correct_class = labels[:, 0:1] == detections[:, 5]
@@ -559,7 +735,6 @@ def run(
                 im = im.to(device, non_blocking=True)
                 targets = targets.to(device)
             im = im.half() if half else im.float()  # uint8 to fp16/32
-            #TODO: prva sus normalizacija ?!?!?, di je druga hmmmm
             im /= 255  # 0 - 255 to 0.0 - 1.0
             nb, _, height, width = im.shape  # batch size, channels, height, width
 
@@ -610,8 +785,7 @@ def run(
                 #scale_boxes(im[si].shape[1:], tbox, shape, shapes[si][1])  # native-space labels
                 labelsn = torch.cat((labels[:, 0:1], tbox), 1)  # native-space labels
                 correct = process_batch(predn, labelsn, iouv)
-                #TODO: pazi mozda ti fali *255
-                logt = LoGT_loss(predn.clone(), labelsn.clone(), im[si], save_dir, visualize = True)
+                logt = LoGT_loss_matrix(predn.clone(), labelsn.clone(), im[si], save_dir, visualize = True)
                 #logt.to(device)
                 altim = im
                 if plots:
@@ -643,6 +817,7 @@ def run(
     a=2
     if len(stats) and stats[0].any():
         tp, fp, p, r, f1, ap, ap_class = ap_per_class(*stats, plot=plots, save_dir=save_dir, names=names)
+        #TODO: promjeni racunanje LOGTA na datasetu sad je dz drugovacije jer su matrice a ne vektori tj ne vektori su i dalje hmm
         logt_on_dataset =  calculate_logt_on_dataset(torch.cat(logt_list))
         ap50, ap = ap[:, 0], ap.mean(1)  # AP@0.5, AP@0.5:0.95
         mp, mr, map50, map = p.mean(), r.mean(), ap50.mean(), ap.mean()
