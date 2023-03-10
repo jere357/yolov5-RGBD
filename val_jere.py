@@ -529,8 +529,9 @@ def LoGT_loss_matrix(detections, labels, im, save_dir,  visualize = False):
         labels (torch.tensor): [Nx5] ground truths in xyxy format
         im (torch.tensor): img CxHxW
     Returns:
-        LoGT (torch.tensor): LoGT matrix (LoGT = Line over Ground Truth vector [max(N,M)]
+        LoGT (torch.tensor): LoGT matrix (LoGT = Line over Ground Truth vector [1 x max(N,M)]
     """
+    #MIRACULOUSLY - this approach is resilient to double annotations found in the dataset so i wont have to get around to cleaning that up since the result of logt is just a fraction
     iou = box_iou(labels[:, 1:], detections[:, :4])
     confidences = (detections[:, 4]*100).to(torch.int32)
     detections = detections[:,:4]
@@ -549,7 +550,7 @@ def LoGT_loss_matrix(detections, labels, im, save_dir,  visualize = False):
     detections_as_lines = bboxes_to_lines(detections)
     #labels_as_lines = bboxes_to_lines(labels)
     LoGT = torch.zeros(labels.shape[0], dtype=torch.float32, device=labels.device)
-    LoGT_matrix = torch.zeros((detections.shape[0], labels.shape[0]), dtype=torch.float32, device=labels.device) #this should be int32 maybe but this way its future proof for when logt loss wont be discrete 
+    LoGT_matrix = torch.zeros((detections.shape[0], labels.shape[0]), dtype=torch.float32, device=labels.device) #this can be int8 maybe but this way its future proof for when logt loss wont be discrete 
     for i in range(len(labels)):
         for j in range(len(detections_as_lines)):
             if labels[i][1] <= detections_as_lines[j][1] <= labels[i][3]:
@@ -567,13 +568,22 @@ def LoGT_loss_matrix(detections, labels, im, save_dir,  visualize = False):
         #image1 = im[1,:,:]
         #image2 = im[2,:,:]
         #image3 = im[3,:,:]
-        #image2 = im[2:5,:,:]
+        #image4 = im[2:5,:,:]
         random_number=random.randint(1, 100)
         #im_drawn = visualise_detections_labels(best_box_per_label, labels, im[2:5,:,:], LoGT, write_to_disk = True)
         imaggio = visualise_detections_labels(detections, confidences, labels, image_rgb, LoGT_matrix, save_dir, random_number, image_name_jebateisus = "rgb", write_to_disk = True)
         visualise_detections_labels(detections, confidences, labels, image_depth, LoGT_matrix, save_dir, random_number, image_name_jebateisus = "depth", write_to_disk = True)
         #visualise_detections_labels(best_box_per_label, labels, image2, LoGT, image_name_jebateisus = "DVA", write_to_disk = True)
         
+    #if the number of predictions is larger than number of labels, then add 0 vectors to the end of LoGT matrix to make it square bcs there are no labels to match them to + if this is not done then false positives won't be punished which is not very cash money
+    # [MxN] -> [MxM]
+    if detections.shape[0] > labels.shape[0]:
+        LoGT_matrix = torch.cat((LoGT_matrix, torch.zeros((detections.shape[0], detections.shape[0] - labels.shape[0]), dtype=LoGT_matrix.dtype, device=LoGT_matrix.device)), dim=1)
+        #LoGT_matrix_extended = torch.cat((LoGT_matrix, torch.zeros(detections.shape[0] - labels.shape[0], labels.shape[1], dtype=LoGT_matrix.dtype, device=LoGT_matrix.device)), dim=1)
+        #LoGT = torch.cat((LoGT_matrix, torch.zeros(detections.shape[0] - labels.shape[0], dtype=torch.float32, device=labels.device)))
+    #TODO: SOMETIMES THE DUPLICATE LABELS MAKE IT SO THAT LOGT MATRIX IS LIKE [1,0,2,1,2] -- this is unintended behaviour, fix it!
+    #on second thought, this is not a problem, it just means that there are 2 labels that are the same, and the model predicted 1 box for them, so it is correct
+    #it shouldnt mess up the rest of the code bcs later im calling torch.nonzeros - that function doesnt care if its 1 or 2, it just counts the number of nonzeros
     return torch.sum(LoGT_matrix, dim=0)
         
 
