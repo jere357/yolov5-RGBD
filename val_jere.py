@@ -419,7 +419,8 @@ def visualise_detections_labels(detections, confidences, labels, im, LoGT, save_
                 torch.tensor([line[2], line[3]]),
                 color=torch.tensor([255,255,2], dtype=torch.uint8))
             except (IndexError, ValueError, RuntimeError, AttributeError) as e:
-                LOGGER.info(f"for image shape {im.shape} img_name{image_name_jebateisus}sjebalo se crtanje: {e} ")
+                #TODO: sometimes imagename is None, fix that idk why bro why would it to that
+                LOGGER.info(f"for image shape {im.shape} img_name: {image_name_jebateisus} sjebalo se crtanje error: {e} ")
                 im_drawn = None #neuspjeh na gitarama
         #if write_to_disk:
             #torchvision.io.write_png(im_drawn, f"slike/test{a}_torch.png")
