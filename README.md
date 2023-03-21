@@ -3,6 +3,6 @@ This code lays the ground for my master's thesis - i will be exploring whether a
 
 
 This project began during my 1year tenure as a researcher at the image processing group on FER, Zagreb, All interested contributors are welcome
-![sketch](/rgdb.png)
+![sketch](/rgbd.png)
 
 \#TODO: write a better readme.md
