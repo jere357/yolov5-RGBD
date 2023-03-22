@@ -414,6 +414,7 @@ def visualise_detections_labels(detections, confidences, labels, im, LoGT, save_
         for line in lines:
             #im_drawn[:, y1, x1 : x2+1] =
             try:
+                #TODO: fix when index is 1024 just make it 1023 who cares
                 im_drawn = draw_line(im_drawn,
                 torch.tensor([line[0],line[1]]),
                 torch.tensor([line[2], line[3]]),
