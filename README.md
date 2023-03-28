@@ -6,4 +6,6 @@ work in progress - adapting the yolov5 v6.0 to work for multi channel inputs :)
 This project began during my 1year tenure as a researcher at the image processing group on FER, Zagreb, All interested contributors are welcome
 ![sketch](/rgbd_background.png)
 
+[i talk about this more on my website](https://jere357.github.io/rgbd.html)
+
 \#TODO: write a better readme.md
