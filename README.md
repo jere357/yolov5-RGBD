@@ -11,3 +11,6 @@ This project began during my 1year tenure as a researcher at the image processin
 
 
 \#TODO: write a better readme.md
+\#TODO: augmentations
+\#TODO: average mixed precision
+\#TODO: let's say your first layer has 32 filters and you want 22 on the RGB channels and 10 filters on the Depth channel or some stuff like that
